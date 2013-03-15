@@ -1,0 +1,14 @@
+
+  This code produces a weight per event, calling the method
+ 
+ double Reweight_Stop_to_TopChi0_with_SUSYmodel (std::vector<SUSYGenParticle> genParticles, double thetaMixingReference, double thetaMixingTarget)
+
+ which goes from a SUSY MC generated with thetaMixingReference to another SUSY MC scenario with thetaMixingTarget. It requires a vector of `struct SUSYGenParticle` which basically contains the info on Status = 3 particles at the generation level. 
+
+This (together with other utilities) is in Stop_TopChi0_Reweighting.C and the script to run it in Stop_TopChi0_Reweighting.
+
+ A test program is provided in TopReweight.C and TopReweight.
+
+ Juan Alcaraz, Begona de la Cruz
+
+

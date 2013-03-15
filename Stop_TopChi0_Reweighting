@@ -1,0 +1,12 @@
+#!/bin/sh
+
+file=`basename $0`
+echo $0
+
+rm -f ${file}.so
+
+ROOTLIBS="`$ROOTSYS/bin/root-config --glibs`"
+ROOTINCDIR="`$ROOTSYS/bin/root-config --incdir` -I/usr/local/include"
+
+g++ -shared -fPIC -I${ROOTINCDIR} ${file}.C ${ROOTLIBS} -o lib${file}.so
+

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+file=$0
+
+fileC=${file}.C
+fileEXE=${file}.exe
+rm -f $fileEXE
+
+ROOTLIBS="`$ROOTSYS/bin/root-config --glibs`"
+ROOTINCDIR="`$ROOTSYS/bin/root-config --incdir` -I/usr/local/include"
+
+rootcint -f MuTreeDict.C -c MuTree.h MuTreeLinkDef.h
+
+g++ -I${ROOTINCDIR} ${fileC} MuTreeDict.C ${ROOTLIBS} -lX11 -o ${fileEXE}
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib64
+${fileEXE} "$@"
+
+rm -f MuTreeDict.C MuTreeDict.h
+rm -f ${fileEXE}

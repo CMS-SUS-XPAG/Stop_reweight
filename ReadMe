@@ -15,7 +15,7 @@
  
  double Reweight_T2bW (double thetaChi_eff, double thetaW_eff, std::vector<SUSYGenParticle> genParticles)
 
- which goes from a fully flat phase space generation for the subsequent two-body decays: chargino -> W LSP, and W -> f fbar', to an scenario defined by the L/R mixing angles thetaChi_eff and thetaW_eff. The first angle defines the mixing in the stop -> b chargino decay. The thetaW_eff angle defines the mixing in the chargino -> W LSP decay. The convention is the standard one, employed in I. Low, arXiv: 1304.0491. It requires a vector of `struct SUSYGenParticle` which basically contains the info on Status = 3 particles at the generation level. 
+ which goes from a fully flat phase space generation for the subsequent two-body decays: chargino -> W LSP, and W -> f fbar', to a scenario defined by the L/R mixing angles thetaChi_eff and thetaW_eff. The first angle defines the mixing in the stop -> b chargino decay. The thetaW_eff angle defines the mixing in the chargino -> W LSP decay. The convention is the standard one, employed in I. Low, arXiv: 1304.0491. It requires a vector of `struct SUSYGenParticle` which basically contains the info on Status = 3 particles at the generation level. 
 
  This method is in T2bW_reweighting.C. A script to build a library with it is T2bW_reweighting.
 

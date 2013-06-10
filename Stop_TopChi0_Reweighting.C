@@ -18,9 +18,10 @@ struct SUSYGenParticle { // To be filled with status-3 genParticles
 double GetThetaMixing(double topPol, double m_stop, double m_top, double m_chi0) {
       double p_chi0 = sqrt(pow(m_top*m_top+m_chi0*m_chi0-m_stop*m_stop,2)/4 - pow(m_top*m_chi0,2))/m_stop;
       double e_chi0 = sqrt(p_chi0*p_chi0+m_chi0*m_chi0);
-      double tanThetaEff = (p_chi0*sqrt(1-topPol*topPol)-m_chi0*topPol)/(topPol*e_chi0+p_chi0);
+      double sqrPol = 0.; if (fabs(topPol)<1) sqrPol = sqrt(1-topPol*topPol);
+      double tanThetaEff = (p_chi0*sqrPol-m_chi0*topPol)/(topPol*e_chi0+p_chi0);
       // This is also a valid solution leading to the same top polarization value
-      //double tanThetaEff = (-p_chi0*sqrt(1-topPol*topPol)-m_chi0*topPol)/(topPol*e_chi0+p_chi0);
+      //double tanThetaEff = (-p_chi0*sqrPol-m_chi0*topPol)/(topPol*e_chi0+p_chi0);
       return atan(tanThetaEff);
 }
 

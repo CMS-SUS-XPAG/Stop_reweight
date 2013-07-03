@@ -1,19 +1,31 @@
 // Stop -> top + LSP
-  This code produces a weight per event, calling the method
+  This code produces a weight per event, calling the method:
  
- double Reweight_Stop_to_TopChi0_with_SUSYmodel (std::vector<SUSYGenParticle> genParticles, double thetaMixingReference, double thetaMixingTarget)
+ double Reweight_Stop_to_TopChi0_with_SUSYmodel (std::vector<SUSYGenParticle> genParticles, double thetaMixingTarget, double TOPMASS_REF=172.5);
 
- which goes from a SUSY MC generated with thetaMixingReference to another SUSY MC scenario with thetaMixingTarget. It requires a vector of `struct SUSYGenParticle` which basically contains the info on Status = 3 particles at the generation level. 
+ which goes from the generated reference scenario with symmetric left-right couplings (in the stop -> top chi0 decay) to a different SUSY MC scenario with parameter thetaMixingTarget. It requires a vector of `struct SUSYGenParticle` which basically contains the info on Status = 3 particles at the generation level. 
 
- This (together with other utilities) is in Stop_TopChi0_Reweighting.C and the script to run it in Stop_TopChi0_Reweighting.
+A symmetric left-right coupling scenario implies thetaMixing = pi/4. If the top is produced on-shell, there is a direct relation between its polarization and thetaMixing. Use the method:
 
- A test program is provided in TopReweight.C and TopReweight.
+double GetThetaMixing(double topPol, double m_stop, double m_top, double m_chi0)
+
+to obtain the value of thetaMixingTarget for a given value of the top helicity (left or right, for instance).
+
+Use:
+
+double GetTopPolarization(double thetaMixing, double m_stop, double m_top, double m_chi0)
+
+to determine what is the polarization expected for any given value of thetaMixing.
+
+ This (together with other utilities) is in the file Stop_TopChi0_Reweighting.C and the script to create a shared library from it is Stop_TopChi0_Reweighting.
+
+ An example on how a test program would look like is provided in TopReweight.C and TopReweight.
 /////
 
 // Stop -> b chargino -> b W LSP
   This code produces a weight per event, calling the method
  
- double Reweight_T2bW (double thetaChi_eff, double thetaW_eff, std::vector<SUSYGenParticle> genParticles)
+ double Reweight_T2bW (double thetaChi_eff, double thetaW_eff, std::vector<SUSYGenParticle> genParticles);
 
  which goes from a fully flat phase space generation for the subsequent two-body decays: chargino -> W LSP, and W -> f fbar', to a scenario defined by the L/R mixing angles thetaChi_eff and thetaW_eff. The first angle defines the mixing in the stop -> b chargino decay. The thetaW_eff angle defines the mixing in the chargino -> W LSP decay. The convention is the standard one, employed in I. Low, arXiv: 1304.0491. It requires a vector of `struct SUSYGenParticle` which basically contains the info on Status = 3 particles at the generation level. 
 

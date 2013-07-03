@@ -1,5 +1,5 @@
 /////// ##### Stop -> top neutralino reweighting and utilitites #####
-/////// J. Alcaraz, B. De La Cruz (CMS, Feb 2013)
+/////// J. Alcaraz, B. De La Cruz (CMS, June 2013)
 #include "TROOT.h"
 #include "TLorentzVector.h"
 
@@ -11,6 +11,10 @@ struct SUSYGenParticle { // To be filled with status-3 genParticles
       double eta; // eta
       double phi; // phi
 };
+
+///////////////////////////////////////////////////////
+// RECOMMENDED CODE ---------------------------------->
+///////////////////////////////////////////////////////
 
 // Get theta effective mixing for a given top polarization hypothesis
 // The result also depends on the stop, top and chi0 mass hypotheses
@@ -35,54 +39,73 @@ double GetTopPolarization(double thetaMixing, double m_stop, double m_top, doubl
       return pol;
 }
 
-// This function estimates the average polarization in the event
-// for a given thetaMixingEffective scenario. We note that
-// top and (-)antitop polarizations only coincide for narrow stop, top, chi0 masses
-// I.e., the function only makes full sense for an on-shell case with narrow widths
-double AverageTopPolarization_Stop_to_TopChi0(double thetaMixing, std::vector<SUSYGenParticle> genParticles) {
-
-    double pol1 = 0.;
-    double pol2 = 0.;
+// The following reweighting makes sense in all cases (OFF-SHELL CASE TOO)
+// It assumes isotropy for the reference MC and any SUSY scenario as target 
+// (via a thetaMixingTarget input)
+double Reweight_Stop_to_TopChi0_with_SUSYmodel (std::vector<SUSYGenParticle> genParticles, double thetaMixingTarget, double TOPMASS_REF=172.5) {
+    double weight = 1.;
 
     unsigned int ngen = genParticles.size();
 
     for (unsigned int ig=0; ig<ngen; ++ig) {
-      // Find the stop
-      const SUSYGenParticle& genStop = genParticles[ig];
-      if (abs(genStop.pdgId)!=1000006) continue; // find the stop
-      int igstop = ig;
+      const SUSYGenParticle& gen = genParticles[ig];
+      if (gen.firstMother<0) continue;
+      if (abs(gen.pdgId)>20) continue; // expect quarks or leptons from W decay
 
-      TLorentzVector stop4;
-      stop4.SetPtEtaPhiE(genStop.pt, genStop.eta, genStop.phi, genStop.energy);
-      TVector3 betaV(-stop4.Px()/stop4.Energy(),-stop4.Py()/stop4.Energy(),-stop4.Pz()/stop4.Energy());
+      // Navigate upwards in the stop->top->W->fermion decay chain
+      const SUSYGenParticle& genW = genParticles[gen.firstMother];
+      if (genW.firstMother<0) continue;
+      if (abs(genW.pdgId)!=24) continue;
+      const SUSYGenParticle& genTop = genParticles[genW.firstMother];
+      if (abs(genTop.pdgId)!=6) continue;
 
+      // We only care about the down-type fermion
+      if (genTop.pdgId*gen.pdgId>0) continue;
+
+      // We also need a stop
+      if (genTop.firstMother<0) continue;
+      const SUSYGenParticle& genStop = genParticles[genTop.firstMother];
+      if (abs(genStop.pdgId)!=1000006) continue;
+
+      TLorentzVector top4;
+      top4.SetPtEtaPhiE(genTop.pt, genTop.eta, genTop.phi, genTop.energy);
+
+      TLorentzVector ferm4;
+      ferm4.SetPtEtaPhiE(gen.pt, gen.eta, gen.phi, gen.energy);
+
+      // Get the neutralino
+      int igstop = genTop.firstMother;
+      int igchi0 = -1;
+      TLorentzVector chi04;
       for (unsigned int ig=igstop+1; ig<ngen; ++ig) { // assume chi0 comes later
             // Move chi0 to the stop rest frame
             const SUSYGenParticle& genChi0 = genParticles[ig];
             if (genChi0.firstMother!=igstop) continue;
             if (abs(genChi0.pdgId)!=1000022) continue;
-
-            TLorentzVector chi04;
+            igchi0 = ig;
             chi04.SetPtEtaPhiE(genChi0.pt, genChi0.eta, genChi0.phi, genChi0.energy);
-            chi04.Boost(betaV);
-
-            if (genParticles[igstop].pdgId>0) {
-                  pol1 = chi04.P()*cos(2*thetaMixing)/(chi04.Energy()+chi04.M()*sin(2*thetaMixing));
-            } else {
-                  pol2 = chi04.P()*cos(2*thetaMixing)/(chi04.Energy()+chi04.M()*sin(2*thetaMixing));
-            }
-      
             break;
       }
-      
+      if (igchi0<0) continue;
+
+      // Determine weight according to model
+      double cX = sin(thetaMixingTarget);
+      double sX = cos(thetaMixingTarget);
+
+      double coeffTop = 2*cX*cX*(chi04*top4) + 2*sX*cX*chi04.M()*TOPMASS_REF;
+      double coeffChi = pow(sX*TOPMASS_REF,2) - pow(cX*top4.M(),2);
+      double coeffNorm = (chi04*top4)*(cX*cX+sX*sX*pow(TOPMASS_REF/top4.M(),2)) + 2*sX*cX*chi04.M()*TOPMASS_REF;
+      weight *= (coeffTop*(ferm4*top4)+coeffChi*(ferm4*chi04))/(coeffNorm*(ferm4*top4));
+
     }
 
-    return (pol1+pol2)/2;
-}
+    return weight;
+
+};
 
 // The following reweighting only makes sense for on-shell stop, top and chi0
 // In the off-shell case top and anti-top may get very different polarizations
-double Reweight_Stop_to_TopChi0 (std::vector<SUSYGenParticle> genParticles, double referenceTopPolarization, double requestedTopPolarization) {
+double Reweight_Stop_to_TopChi0_TopOnshell (std::vector<SUSYGenParticle> genParticles, double referenceTopPolarization, double requestedTopPolarization) {
     double weight = 1.;
 
     unsigned int ngen = genParticles.size();
@@ -139,10 +162,59 @@ double Reweight_Stop_to_TopChi0 (std::vector<SUSYGenParticle> genParticles, doub
 
 };
 
-// The following reweighting makes sense in iall cases (off-shell case too)
+///////////////////////////////////////////////////////
+//// ADDITIONAL CODE --------------------------------->
+///////////////////////////////////////////////////////
+
+// This function estimates the average polarization in the event
+// for a given thetaMixingEffective scenario. We note that
+// top and (-)antitop polarizations only coincide for narrow stop, top, chi0 masses
+// I.e., the function only makes full sense for an on-shell case with narrow widths
+double AverageTopPolarization_Stop_to_TopChi0(double thetaMixing, std::vector<SUSYGenParticle> genParticles) {
+
+    double pol1 = 0.;
+    double pol2 = 0.;
+
+    unsigned int ngen = genParticles.size();
+
+    for (unsigned int ig=0; ig<ngen; ++ig) {
+      // Find the stop
+      const SUSYGenParticle& genStop = genParticles[ig];
+      if (abs(genStop.pdgId)!=1000006) continue; // find the stop
+      int igstop = ig;
+
+      TLorentzVector stop4;
+      stop4.SetPtEtaPhiE(genStop.pt, genStop.eta, genStop.phi, genStop.energy);
+      TVector3 betaV(-stop4.Px()/stop4.Energy(),-stop4.Py()/stop4.Energy(),-stop4.Pz()/stop4.Energy());
+
+      for (unsigned int ig=igstop+1; ig<ngen; ++ig) { // assume chi0 comes later
+            // Move chi0 to the stop rest frame
+            const SUSYGenParticle& genChi0 = genParticles[ig];
+            if (genChi0.firstMother!=igstop) continue;
+            if (abs(genChi0.pdgId)!=1000022) continue;
+
+            TLorentzVector chi04;
+            chi04.SetPtEtaPhiE(genChi0.pt, genChi0.eta, genChi0.phi, genChi0.energy);
+            chi04.Boost(betaV);
+
+            if (genParticles[igstop].pdgId>0) {
+                  pol1 = chi04.P()*cos(2*thetaMixing)/(chi04.Energy()+chi04.M()*sin(2*thetaMixing));
+            } else {
+                  pol2 = chi04.P()*cos(2*thetaMixing)/(chi04.Energy()+chi04.M()*sin(2*thetaMixing));
+            }
+      
+            break;
+      }
+      
+    }
+
+    return (pol1+pol2)/2;
+}
+
+// The following reweighting makes sense in all cases, BUT OFF-SHELL TOPs
 // It assumes isotropy for the reference MC and any SUSY scenario as target 
 // (via a thetaMixingTarget input)
-double Reweight_Stop_to_TopChi0_with_SUSYmodel (std::vector<SUSYGenParticle> genParticles, double thetaMixingTarget) { 
+double Reweight_Stop_to_TopChi0_TopOnshell_with_SUSYmodel (std::vector<SUSYGenParticle> genParticles, double thetaMixingTarget) { 
     double weight = 1.;
 
     unsigned int ngen = genParticles.size();
@@ -225,10 +297,10 @@ double Reweight_Stop_to_TopChi0_with_SUSYmodel (std::vector<SUSYGenParticle> gen
 
 };
 
-// The following reweighting also makes sense in the off-shell case
+// The following reweighting only makes sense in the TOP ON-SHELL case
 // It goes from a SUSY MC generated with thetaMixingReference to another
 // SUSY MC scenario with thetaMixingTarget
-double Reweight_Stop_to_TopChi0_with_SUSYmodel (std::vector<SUSYGenParticle> genParticles, double thetaMixingReference, double thetaMixingTarget) { 
+double Reweight_Stop_to_TopChi0_TopOnshell_with_SUSYmodel (std::vector<SUSYGenParticle> genParticles, double thetaMixingReference, double thetaMixingTarget) { 
     double weight = 1.;
 
     unsigned int ngen = genParticles.size();
@@ -311,3 +383,69 @@ double Reweight_Stop_to_TopChi0_with_SUSYmodel (std::vector<SUSYGenParticle> gen
     return weight;
 
 };
+
+// The following reweighting makes sense in all cases (OFF-SHELL CASE TOO)
+// It assumes isotropy for the reference MC and any SUSY scenario as target 
+// (via a thetaMixingTarget input)
+double Reweight_Stop_to_TopChi0_with_SUSYmodel_ExactBW (std::vector<SUSYGenParticle> genParticles, double thetaMixingTarget, double TOPMASS_REF) { 
+    double weight = 1.;
+
+    unsigned int ngen = genParticles.size();
+
+    for (unsigned int ig=0; ig<ngen; ++ig) {
+      const SUSYGenParticle& gen = genParticles[ig];
+      if (gen.firstMother<0) continue;
+      if (abs(gen.pdgId)>20) continue; // expect quarks or leptons from W decay
+
+      // Navigate upwards in the stop->top->W->fermion decay chain
+      const SUSYGenParticle& genW = genParticles[gen.firstMother];
+      if (genW.firstMother<0) continue;
+      if (abs(genW.pdgId)!=24) continue;
+      const SUSYGenParticle& genTop = genParticles[genW.firstMother];
+      if (abs(genTop.pdgId)!=6) continue;
+
+      // We only care about the down-type fermion
+      if (genTop.pdgId*gen.pdgId>0) continue;
+
+      // We also need a stop
+      if (genTop.firstMother<0) continue;
+      const SUSYGenParticle& genStop = genParticles[genTop.firstMother];
+      if (abs(genStop.pdgId)!=1000006) continue;
+
+      TLorentzVector top4;
+      top4.SetPtEtaPhiE(genTop.pt, genTop.eta, genTop.phi, genTop.energy);
+
+      TLorentzVector ferm4;
+      ferm4.SetPtEtaPhiE(gen.pt, gen.eta, gen.phi, gen.energy);
+
+      // Get the neutralino
+      int igstop = genTop.firstMother;
+      int igchi0 = -1;
+      TLorentzVector chi04;
+      for (unsigned int ig=igstop+1; ig<ngen; ++ig) { // assume chi0 comes later
+            // Move chi0 to the stop rest frame
+            const SUSYGenParticle& genChi0 = genParticles[ig];
+            if (genChi0.firstMother!=igstop) continue;
+            if (abs(genChi0.pdgId)!=1000022) continue;
+            igchi0 = ig;
+            chi04.SetPtEtaPhiE(genChi0.pt, genChi0.eta, genChi0.phi, genChi0.energy);
+            break;
+      }
+      if (igchi0<0) continue;
+
+      // Determine weight according to model
+      double cX = sin(thetaMixingTarget);
+      double sX = cos(thetaMixingTarget);
+
+      double coeffTop = 2*cX*cX*(chi04*top4) + 2*sX*cX*chi04.M()*TOPMASS_REF;
+      double coeffChi = pow(sX*TOPMASS_REF,2) - pow(cX*top4.M(),2);
+
+      double coeffRef = (chi04*top4) + chi04.M()*top4.M();
+      weight *= (coeffTop*(ferm4*top4)+coeffChi*(ferm4*chi04))/(coeffRef*(ferm4*top4));
+
+    }
+
+    return weight;
+
+};
+

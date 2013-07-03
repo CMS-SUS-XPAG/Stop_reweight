@@ -93,12 +93,12 @@ int main(int argc, char** argv){
 
     //double pol_new = POL;
     //double pol_new = AverageTopPolarization_Stop_to_TopChi0(-1.1, genParticles);
-    //double weight = Reweight_Stop_to_TopChi0 (genParticles, 0., pol_new);
+    //double weight = Reweight_Stop_to_TopChi0_TopOnshell (genParticles, 0., pol_new);
 
     // m_stop=950 GeV, m_chi0=425 GeV, m_top=175 GeV
     double thetaMixingTarget = -1.134; // Pol=-1
     //double thetaMixingTarget = -0.437; // Pol=+1
-    double weight = Reweight_Stop_to_TopChi0_with_SUSYmodel (genParticles, 0.785, thetaMixingTarget);
+    double weight = Reweight_Stop_to_TopChi0_with_SUSYmodel (genParticles, thetaMixingTarget);
 
     for (unsigned int ig=0; ig<ngen; ++ig) {
       GenParticle gen = ev.genParticles[ig];

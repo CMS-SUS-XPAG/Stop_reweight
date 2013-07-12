@@ -387,6 +387,10 @@ double Reweight_Stop_to_TopChi0_TopOnshell_with_SUSYmodel (std::vector<SUSYGenPa
 // The following reweighting makes sense in all cases (OFF-SHELL CASE TOO)
 // It assumes isotropy for the reference MC and any SUSY scenario as target 
 // (via a thetaMixingTarget input)
+// WARNING: THIS REWEIGHTING DoeS NOT CONSERVE NORMALIZATION. SO IT REQUIRES 
+// AN ADDITIONAL FACTOR THAT CAN BE OBTAINED BY CALCULATING THE AVERAGE OF WEIGHTS 
+// OVER THE WHOLE MC SAMPLE WITHOUT CUTS: contact J.A. if you want/need to 
+// use it but you do not understand what this warning means...
 double Reweight_Stop_to_TopChi0_with_SUSYmodel_ExactBW (std::vector<SUSYGenParticle> genParticles, double thetaMixingTarget, double TOPMASS_REF) { 
     double weight = 1.;
 

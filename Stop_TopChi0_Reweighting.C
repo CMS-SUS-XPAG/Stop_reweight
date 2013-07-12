@@ -89,12 +89,12 @@ double Reweight_Stop_to_TopChi0_with_SUSYmodel (std::vector<SUSYGenParticle> gen
       if (igchi0<0) continue;
 
       // Determine weight according to model
-      double cX = sin(thetaMixingTarget);
-      double sX = cos(thetaMixingTarget);
+      double cX = cos(thetaMixingTarget);
+      double sX = sin(thetaMixingTarget);
 
-      double coeffTop = 2*cX*cX*(chi04*top4) + 2*sX*cX*chi04.M()*TOPMASS_REF;
-      double coeffChi = pow(sX*TOPMASS_REF,2) - pow(cX*top4.M(),2);
-      double coeffNorm = (chi04*top4)*(cX*cX+sX*sX*pow(TOPMASS_REF/top4.M(),2)) + 2*sX*cX*chi04.M()*TOPMASS_REF;
+      double coeffTop = 2*sX*sX*(chi04*top4) + 2*sX*cX*chi04.M()*TOPMASS_REF;
+      double coeffChi = pow(cX*TOPMASS_REF,2) - pow(sX*top4.M(),2);
+      double coeffNorm = (chi04*top4)*(sX*sX+cX*cX*pow(TOPMASS_REF/top4.M(),2)) + 2*sX*cX*chi04.M()*TOPMASS_REF;
       weight *= (coeffTop*(ferm4*top4)+coeffChi*(ferm4*chi04))/(coeffNorm*(ferm4*top4));
 
     }
@@ -434,11 +434,11 @@ double Reweight_Stop_to_TopChi0_with_SUSYmodel_ExactBW (std::vector<SUSYGenParti
       if (igchi0<0) continue;
 
       // Determine weight according to model
-      double cX = sin(thetaMixingTarget);
-      double sX = cos(thetaMixingTarget);
+      double cX = cos(thetaMixingTarget);
+      double sX = sin(thetaMixingTarget);
 
-      double coeffTop = 2*cX*cX*(chi04*top4) + 2*sX*cX*chi04.M()*TOPMASS_REF;
-      double coeffChi = pow(sX*TOPMASS_REF,2) - pow(cX*top4.M(),2);
+      double coeffTop = 2*sX*sX*(chi04*top4) + 2*sX*cX*chi04.M()*TOPMASS_REF;
+      double coeffChi = pow(cX*TOPMASS_REF,2) - pow(sX*top4.M(),2);
 
       double coeffRef = (chi04*top4) + chi04.M()*top4.M();
       weight *= (coeffTop*(ferm4*top4)+coeffChi*(ferm4*chi04))/(coeffRef*(ferm4*top4));
